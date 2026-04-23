@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<transfers xmlns="spryker:transfer-01"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="spryker:transfer-01 http://static.spryker.com/transfer-01.xsd">
+
+    <transfer name="SerializerContext" strict="true">
+        <property name="groups" type="string[]" singular="group"/>
+        <property name="isSkipNullValues" type="bool"/>
+        <property name="isSkipUninitializedValues" type="bool"/>
+        <property name="isPreserveEmptyObjects" type="bool"/>
+        <property name="isEnableMaxDepth" type="bool"/>
+        <property name="maxDepth" type="int"/>
+        <property name="isAllowExtraAttributes" type="bool"/>
+        <property name="datetimeFormat" type="string"/>
+        <property name="datetimeTimezone" type="string"/>
+        <property name="isCollectDenormalizationErrors" type="bool"/>
+        <property name="isRequireAllProperties" type="bool"/>
+        <property name="isDisableTypeEnforcement" type="bool"/>
+        <property name="defaultConstructorArguments" type="array" singular="defaultConstructorArguments"/>
+        <property name="symfonyContext" type="array" singular="symfonyContext"/>
+    </transfer>
+
+</transfers>
