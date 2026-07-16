@@ -68,7 +68,30 @@ class Serializer implements SerializerInterface
             $context[AbstractNormalizer::OBJECT_TO_POPULATE] = $objectToPopulate;
         }
 
-        return $this->getSymfonySerializer()->denormalize($data, $type, $format, $context);
+        return $this->getSymfonySerializer()->denormalize($this->sanitizeDenormalizationInput($data), $type, $format, $context);
+    }
+
+    /**
+     * Denormalization input is frequently a trusted transfer array (`$transfer->toArray()`) that
+     * still carries value objects such as `Spryker\DecimalObject\Decimal` in numeric fields.
+     * Symfony cannot assign such a value object to a scalar (`int`/`float`) property, so reduce any
+     * decimal value object to its numeric scalar before denormalization. It is detected structurally
+     * (rather than by class) to avoid coupling this generic service to the decimal-object module.
+     * Scalars, nested arrays and other objects are left untouched.
+     */
+    protected function sanitizeDenormalizationInput(mixed $data): mixed
+    {
+        if (is_object($data) && method_exists($data, 'isInteger') && method_exists($data, 'toInt') && method_exists($data, 'toFloat')) {
+            return $data->isInteger() ? $data->toInt() : $data->toFloat();
+        }
+
+        if (is_array($data)) {
+            foreach ($data as $key => $value) {
+                $data[$key] = $this->sanitizeDenormalizationInput($value);
+            }
+        }
+
+        return $data;
     }
 
     protected function getSymfonySerializer(): SymfonySerializer

@@ -7,9 +7,11 @@
 
 namespace Spryker\Service\Serializer\Builder;
 
+use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\Serializer\Encoder\CsvEncoder;
 use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Encoder\XmlEncoder;
+use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 use Symfony\Component\Serializer\Normalizer\ArrayDenormalizer;
 use Symfony\Component\Serializer\Normalizer\BackedEnumNormalizer;
 use Symfony\Component\Serializer\Normalizer\DataUriNormalizer;
@@ -53,7 +55,17 @@ class SerializerBuilder
             new DataUriNormalizer(),
             new JsonSerializableNormalizer(),
             new ArrayDenormalizer(),
-            new ObjectNormalizer(),
+            // The ReflectionExtractor lets the ObjectNormalizer denormalize nested typed value
+            // objects (e.g. an Address inside a shipment). It also turns on strict scalar type
+            // enforcement, which rejects benign mismatches when mapping trusted internal transfer
+            // arrays onto generated resources (e.g. an int taxRate for a float property, since
+            // int->float coercion only applies to JSON-format input). DISABLE_TYPE_ENFORCEMENT
+            // restores the pre-extractor leniency for scalars (PHP coerces on assignment) while
+            // keeping nested-object denormalization, which runs before the enforcement check.
+            new ObjectNormalizer(
+                propertyTypeExtractor: new ReflectionExtractor(),
+                defaultContext: [AbstractObjectNormalizer::DISABLE_TYPE_ENFORCEMENT => true],
+            ),
         ];
     }
 
