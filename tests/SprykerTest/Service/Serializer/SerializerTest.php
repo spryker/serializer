@@ -9,8 +9,10 @@ namespace SprykerTest\Service\Serializer;
 
 use Codeception\Test\Unit;
 use Generated\Shared\Transfer\SerializerContextTransfer;
+use Spryker\DecimalObject\Decimal;
 use Spryker\Service\Serializer\SerializerInterface;
 use Spryker\Service\Serializer\SerializerServiceFactory;
+use stdClass;
 
 /**
  * Auto-generated group annotations
@@ -110,6 +112,72 @@ class SerializerTest extends Unit
         $this->assertSame($existingDto, $result);
         $this->assertSame('updated', $result->name);
         $this->assertSame(99, $result->value);
+    }
+
+    public function testGivenDecimalValueObjectWhenDenormalizeThenPreservesDecimalScale(): void
+    {
+        // Arrange
+        $serializer = $this->getSerializer();
+        $data = ['amount' => Decimal::create('1.5000000000')];
+
+        // Act
+        $result = $serializer->denormalize($data, SerializerTestDto::class);
+
+        // Assert
+        $this->assertSame('1.5000000000', $result->amount);
+    }
+
+    public function testGivenIntegerValuedDecimalValueObjectWhenDenormalizeThenKeepsFractionalNotation(): void
+    {
+        // Arrange
+        $serializer = $this->getSerializer();
+        $data = ['amount' => Decimal::create('3.0')];
+
+        // Act
+        $result = $serializer->denormalize($data, SerializerTestDto::class);
+
+        // Assert
+        $this->assertSame('3.0', $result->amount);
+    }
+
+    public function testGivenDecimalValueObjectNestedInArrayWhenDenormalizeThenPreservesDecimalScale(): void
+    {
+        // Arrange
+        $serializer = $this->getSerializer();
+        $data = ['items' => [['nested' => ['amount' => Decimal::create('1.5000000000')]]]];
+
+        // Act
+        $result = $serializer->denormalize($data, SerializerTestDto::class);
+
+        // Assert
+        $this->assertSame('1.5000000000', $result->items[0]['nested']['amount']);
+    }
+
+    public function testGivenIntegerValuedDecimalValueObjectWhenDenormalizeIntoIntegerPropertyThenAssignsInteger(): void
+    {
+        // Arrange
+        $serializer = $this->getSerializer();
+        $data = ['value' => Decimal::create('5.0000000000')];
+
+        // Act
+        $result = $serializer->denormalize($data, SerializerTestDto::class);
+
+        // Assert
+        $this->assertSame(5, $result->value);
+    }
+
+    public function testGivenNonDecimalObjectWhenDenormalizeThenLeavesValueUntouched(): void
+    {
+        // Arrange
+        $serializer = $this->getSerializer();
+        $plainObject = new stdClass();
+        $plainObject->amount = '1.5000000000';
+
+        // Act
+        $result = $serializer->denormalize(['items' => [$plainObject]], SerializerTestDto::class);
+
+        // Assert
+        $this->assertSame($plainObject, $result->items[0]);
     }
 
     public function testGivenNullPropertyWhenSerializeWithSkipNullContextThenOmitsNullValues(): void

@@ -72,17 +72,24 @@ class Serializer implements SerializerInterface
     }
 
     /**
-     * Denormalization input is frequently a trusted transfer array (`$transfer->toArray()`) that
-     * still carries value objects such as `Spryker\DecimalObject\Decimal` in numeric fields.
-     * Symfony cannot assign such a value object to a scalar (`int`/`float`) property, so reduce any
-     * decimal value object to its numeric scalar before denormalization. It is detected structurally
-     * (rather than by class) to avoid coupling this generic service to the decimal-object module.
-     * Scalars, nested arrays and other objects are left untouched.
+     * Denormalization input is often a trusted transfer array still carrying `Decimal` value
+     * objects, which Symfony cannot assign to scalar properties.
+     *
+     * Reducing to the decimal's own string keeps its scale — the same form `Decimal::jsonSerialize()`
+     * emits. Reducing to `int`/`float` instead turns every decimal-backed API field from a decimal
+     * string into a JSON number and breaks a published contract. Detection is structural to keep this
+     * generic service decoupled from the decimal-object module.
      */
     protected function sanitizeDenormalizationInput(mixed $data): mixed
     {
-        if (is_object($data) && method_exists($data, 'isInteger') && method_exists($data, 'toInt') && method_exists($data, 'toFloat')) {
-            return $data->isInteger() ? $data->toInt() : $data->toFloat();
+        if (
+            is_object($data)
+            && method_exists($data, 'toString')
+            && method_exists($data, 'isInteger')
+            && method_exists($data, 'toInt')
+            && method_exists($data, 'toFloat')
+        ) {
+            return $data->toString();
         }
 
         if (is_array($data)) {

@@ -12,4 +12,11 @@ class SerializerTestDto
     public ?string $name = null;
 
     public ?int $value = null;
+
+    public ?string $amount = null;
+
+    /**
+     * @var array<mixed>
+     */
+    public array $items = [];
 }
